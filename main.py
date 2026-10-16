@@ -1,12 +1,3 @@
-
-
-### 8. `main.py`
-
-```python
-"""
-Main execution script for SofaScore Value Bet Finder.
-"""
-
 import sys
 from tabulate import tabulate
 
@@ -56,3 +47,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    
