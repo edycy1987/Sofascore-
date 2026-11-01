@@ -20,7 +20,7 @@ class SofaScoreScraper:
         self.headers = headers or DEFAULT_HEADERS
         self.timeout = timeout
 
-    def fetch_match_data((self) -> List[Dict[str, Any]]:
+    def fetch_match_data(self) -> List[Dict[str, Any]]:
         """
         Fetches event data including bookmaker odds and SofaScore historical win rates.
 
@@ -114,4 +114,3 @@ class SofaScoreScraper:
                 },
             },
         ]
-      
