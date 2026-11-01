@@ -4,6 +4,7 @@ Mathematical analysis module for EV calculation and Value Bet detection.
 
 import logging
 from typing import Any, Dict, List
+
 import pandas as pd
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -25,14 +26,14 @@ class ValueBetAnalyzer:
     @staticmethod
     def calculate_implied_probability(odds: float) -> float:
         """Calculates implied probability from decimal odds (1 / Odds)."""
-        if odds <= 1.0:
+        if odds is None or odds <= 1.0:
             return 0.0
         return 1.0 / odds
 
     @staticmethod
     def calculate_expected_value(win_probability: float, odds: float) -> float:
         """Calculates Expected Value (EV = (Win Probability * Odds) - 1)."""
-        if odds <= 1.0 or win_probability < 0.0:
+        if odds is None or odds <= 1.0 or win_probability < 0.0:
             return -1.0
         return (win_probability * odds) - 1.0
 
@@ -46,23 +47,36 @@ class ValueBetAnalyzer:
         Returns:
             pd.DataFrame: Formatted DataFrame sorted by EV descending.
         """
+        if not isinstance(matches, list):
+            logger.error("Match payload must be a list of dictionaries.")
+            return pd.DataFrame()
+
         results = []
 
         for match in matches:
             try:
+                if not isinstance(match, dict):
+                    logger.warning("Skipping non-dictionary match entry: %s", type(match))
+                    continue
+
                 match_id = match.get("id", "N/A")
                 home_team = match.get("home_team", "Unknown")
                 away_team = match.get("away_team", "Unknown")
                 league = match.get("league", "Unknown")
+                historical = match.get("sofascore_historical", {})
+
+                if not isinstance(historical, dict):
+                    logger.warning("Match %s has invalid sofascore_historical data; skipping.", match_id)
+                    continue
 
                 selections = [
-                    ("Home Win", match.get("home_odds", 0.0), match.get("sofascore_historical", {}).get("home_win_rate", 0.0)),
-                    ("Draw", match.get("draw_odds", 0.0), match.get("sofascore_historical", {}).get("draw_rate", 0.0)),
-                    ("Away Win", match.get("away_odds", 0.0), match.get("sofascore_historical", {}).get("away_win_rate", 0.0)),
+                    ("Home Win", match.get("home_odds", 0.0), historical.get("home_win_rate", 0.0)),
+                    ("Draw", match.get("draw_odds", 0.0), historical.get("draw_rate", 0.0)),
+                    ("Away Win", match.get("away_odds", 0.0), historical.get("away_win_rate", 0.0)),
                 ]
 
                 for sel_name, odds, hist_prob in selections:
-                    if odds <= 1.0 or hist_prob <= 0.0:
+                    if odds is None or odds <= 1.0 or hist_prob is None or hist_prob <= 0.0:
                         continue
 
                     implied_prob = self.calculate_implied_probability(odds)
